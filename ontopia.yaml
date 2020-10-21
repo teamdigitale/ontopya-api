@@ -1,0 +1,39 @@
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  title: Ontopia core vocabularies
+  description: |-
+    recupera i dati dei vocabolari da ontopia
+servers:
+- url: >-
+    http://localhost:5000/vocabolari/v0
+  description: dev
+paths:
+  /status:
+    get:
+      summary: il voc
+      operationId: ontopia.get_status
+      responses:
+        "200":
+          description: tottok
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /vocabolari:
+    get:
+      summary: il voc
+      parameters:
+      - name: onto
+        in: query
+        required: false
+        schema: {type: string}
+      operationId: ontopia.get_vocabulary
+      responses:
+        "200":
+           description: tottok
+           content:
+             application/json:
+               schema:
+                 type: object
