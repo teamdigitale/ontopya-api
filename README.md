@@ -19,6 +19,9 @@ che restituisce l'URL di interrogazione
 
         curl -kv https://us-central1-ontopya-api.cloudfunctions.net/ontopya_get
 
+
+Note: è necessario attivare anche le Build API perché le Cloud Functions vengono eseguite dentro container.
+
 ### Tecnologia
 
 L'API è basata sul quickstart di Google Cloud Functions

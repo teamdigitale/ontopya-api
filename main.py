@@ -12,26 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lxml.etree import tostring
-import requests
-from lxml import html
+import http.client as http_client
+import json
+import logging
 import re
 
-# This WILL be reported to Stackdriver Error Reporting
-from flask import abort
+import requests
 import yaml
-import json
+from flask import abort, escape
 
-# [START functions_helloworld_http]
-# [START functions_http_content]
-from flask import escape
-
-# [END functions_helloworld_http]
-# [END functions_http_content]
-
-import logging
-
-import http.client as http_client
+from ontopia import get_vocabulary
 
 http_client.HTTPConnection.debuglevel = 2
 requests_log = logging.getLogger("requests.packages.urllib3")
@@ -69,9 +59,7 @@ def _validate_parameters(request, mandatory_or, available=None):
             logging.error(RuntimeError(msg))
             problem(status=400, title=msg, args=request.path)
 
-from ontopia import get_vocabulary
 
-# [START functions_orari_get]
 def vocabulary_get(request, ontology, vocabulary):
     """HTTP Cloud Function.
     Args:
@@ -84,13 +72,21 @@ def vocabulary_get(request, ontology, vocabulary):
     """
     accept = request.headers.get("accept")
     if False and accept != "application/json":
-        abort(415, {"title": "Not Acceptable", "details": "Supported formats: application/json"})
+        abort(
+            415,
+            {
+                "title": "Not Acceptable",
+                "details": "Supported formats: application/json",
+            },
+        )
 
     _validate_parameters(request, [])
 
     ontology = f"{ontology}/{vocabulary}"
-
-    return json.dumps(get_vocabulary(ontology))
+    headers = {
+        "Cache-Control": "public, max-age=36000"
+    }
+    return json.dumps(get_vocabulary(ontology)), 200, headers
 
 
 def ontopya_get(request):
@@ -106,5 +102,3 @@ def ontopya_get(request):
         return {
             "/ontopya/{ontology}/{vocabulary}": "Return a vocabulary.",
         }
-
-

@@ -14,13 +14,12 @@
 
 import flask
 import pytest
-
-import main
 import yaml
 
 # Create a fake "app" for generating test request contexts.
 from werkzeug.exceptions import BadRequest, NotFound
 
+import main
 
 TEST_CF = "RSSMRO54P05E472I"
 
@@ -28,8 +27,6 @@ TEST_CF = "RSSMRO54P05E472I"
 @pytest.fixture(scope="module")
 def app():
     return flask.Flask(__name__)
-
-
 
 
 def test_ontopia_get(app):
@@ -51,25 +48,24 @@ def test_onto_NotImplemented(app):
 
 
 def test_ontopya_get(app):
-    with app.test_request_context(headers={"accept": "application/json"},
-        path='CPV/Sex'
+    with app.test_request_context(
+        headers={"accept": "application/json"}, path="CPV/Sex"
     ):
         res = main.ontopya_get(flask.request)
         assert "en" in res, res
 
 
 def test_ontopya_get_empty_json(app):
-    with app.test_request_context(json="",         path='CPV/Sex'
-):
+    with app.test_request_context(json="", path="CPV/Sex"):
         with pytest.raises(BadRequest) as exc:
             res = main.ontopya_get(flask.request)
         assert "At least one of the following parameter" in exc.value.description
 
 
 def test_ontopya_get_xss(app):
-    with app.test_request_context(        path='"<script>alert(1)</script>"'
-,
-        query_string={"surname": "<script>alert(1)</script>"}
+    with app.test_request_context(
+        path='"<script>alert(1)</script>"',
+        query_string={"surname": "<script>alert(1)</script>"},
     ):
         with pytest.raises(BadRequest) as exc:
             res = main.ontopya_get(flask.request)

@@ -1,8 +1,7 @@
-from urllib.parse import urlparse, parse_qs, urlencode
+from collections import defaultdict
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
-
-from collections import defaultdict
 
 
 def get_status():
