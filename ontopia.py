@@ -1,5 +1,6 @@
 from collections import defaultdict
 from urllib.parse import parse_qs, urlencode, urlparse
+from functools import lru_cache
 
 import requests
 
@@ -8,12 +9,15 @@ def get_status():
     return {"status": 200}
 
 
-def get_vocabulary(onto="CPV/Sex"):
+# @lru_cache(maxsize=5)
+def get_vocabulary(onto="CPV/Sex", limit=200, offset=0):
+    onto_url = "https://w3id.org/italia/onto/" f"{onto}"
     qp = {
         "query": [
-            "select ?value ?id where {\r\n?x rdf:type <https://w3id.org/italia/onto/"
-            f"{onto}"
-            ">;\r\n skos:notation ?id;\r\n skos:prefLabel ?value\r\n} LIMIT 200"
+            "select ?value ?id where {\r\n?x rdf:type "
+            f"<{onto_url}>"
+            ";\r\n skos:notation ?id;\r\n skos:prefLabel ?value\r\n}"
+            f"LIMIT {limit} OFFSET {offset}"
         ],
         "format": ["application/sparql-results+json"],
         "timeout": ["0"],
@@ -29,10 +33,18 @@ def get_vocabulary(onto="CPV/Sex"):
         return data.content.decode()
 
     d = defaultdict(list)
-    for i in j["results"]["bindings"]:
-        value, _id = i["value"], i["id"]
+    for i, item in enumerate(j["results"]["bindings"]):
+        value, _id = item["value"], item["id"]
         lang = value["xml:lang"]
         d[lang].append({_id["value"]: value["value"]})
+    d["url"] = onto_url
+    d["_links"] = {
+        "limit": limit,
+        "offset": offset,
+        "cursor": _id,
+        "count": i,
+        "offset_next": offset + i,
+    }
     return dict(d)
 
 

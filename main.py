@@ -80,19 +80,22 @@ def vocabulary_get(request, ontology, vocabulary):
             },
         )
 
-    _validate_parameters(request, [])
+    _validate_parameters(request, [], ["limit", "offset"])
+    limit = request.args.get("limit") or 200
+    offset = request.args.get("offset") or 0
 
     ontology = f"{ontology}/{vocabulary}"
     headers = {
         "Cache-Control": "public, max-age=36000",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
-    return json.dumps(get_vocabulary(ontology)), 200, headers
+    return json.dumps(get_vocabulary(ontology, limit, offset)), 200, headers
 
 
 def ontopya_get(request):
     try:
         ontology, vocabulary = request.path.strip("/ ").split("/")
+
         return vocabulary_get(request, ontology, vocabulary)
 
     except (ValueError, IndexError, TypeError) as e:

@@ -33,7 +33,7 @@ def test_ontopia_get(app):
     o = "CPV"
     v = "Sex"
     with app.test_request_context(path=f"/{o}/{v}",):
-        res = main.ontopya_get(flask.request)
+        res, status, headers = main.ontopya_get(flask.request)
         data = yaml.safe_load(res)
 
         assert "en" in data, data
@@ -51,14 +51,14 @@ def test_ontopya_get(app):
     with app.test_request_context(
         headers={"accept": "application/json"}, path="CPV/Sex"
     ):
-        res = main.ontopya_get(flask.request)
+        res, status, headers = main.ontopya_get(flask.request)
         assert "en" in res, res
 
 
 def test_ontopya_get_empty_json(app):
     with app.test_request_context(json="", path="CPV/Sex"):
         with pytest.raises(BadRequest) as exc:
-            res = main.ontopya_get(flask.request)
+            res, status, headers = main.ontopya_get(flask.request)
         assert "At least one of the following parameter" in exc.value.description
 
 
