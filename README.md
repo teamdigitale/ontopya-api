@@ -13,7 +13,8 @@ Eseguire
 
 L'installazione su GCP avviene col comando
 
-        gcloud functions deploy ontopya_get --runtime python37 --project ontopya-api --trigger-http
+        gcloud functions deploy ontopya_get --runtime python37 --project \
+         ontopia-api --trigger-http
 
 che restituisce l'URL di interrogazione
 

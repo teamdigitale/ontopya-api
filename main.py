@@ -84,7 +84,8 @@ def vocabulary_get(request, ontology, vocabulary):
 
     ontology = f"{ontology}/{vocabulary}"
     headers = {
-        "Cache-Control": "public, max-age=36000"
+        "Cache-Control": "public, max-age=36000",
+        "Content-Type": "application/json"
     }
     return json.dumps(get_vocabulary(ontology)), 200, headers
 
