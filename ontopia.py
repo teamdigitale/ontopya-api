@@ -32,8 +32,17 @@ def get_status():
 
 
 @lru_cache(maxsize=50)
-def get_vocabulary(classification="classification-for-documents", vocabulary_name="government-documents-types", limit=200, cursor=None, offset=0):
-    vocabulary_uri = "https://w3id.org/italia/controlled-vocabulary/" f"{classification}/{vocabulary_name}"
+def get_vocabulary(
+    classification="classification-for-documents",
+    vocabulary_name="government-documents-types",
+    limit=200,
+    cursor=None,
+    offset=0,
+):
+    vocabulary_uri = (
+        "https://w3id.org/italia/controlled-vocabulary/"
+        f"{classification}/{vocabulary_name}"
+    )
     assert "cursor".isalnum(), "Cursor is not alnum"
     cursor_filter = f'FILTER (?id > "{cursor}")' if cursor is not None else ""
     offset_clause = f"OFFSET {offset}" if offset else ""
@@ -69,6 +78,52 @@ def get_vocabulary(classification="classification-for-documents", vocabulary_nam
         value, _id = item["value"], item["id"]
         lang = value["xml:lang"]
         d[lang].append({_id["value"]: value["value"]})
+    offset_next = offset + i + 1 if i is not None and offset is not None else 0
+    d["_links"] = {
+        "limit": limit,
+        "url": vocabulary_uri,
+        "query": qp["query"],
+        "cursor": _id["value"] if i is not None else None,
+        "count": i + 1 if i is not None else 0,
+        "offset_next": offset_next,
+        "page_next": request.base_url + "?offset=" + str(offset_next)
+        if offset_next is not None
+        else "",
+    }
+    return dict(d)
+
+
+def get_datasets(limit=200, offset=0):
+    offset_clause = f"OFFSET {offset}" if offset else ""
+    qp = {
+        "query": [
+            "select distinct ?uri ?value where {"
+                "?uri rdf:type <http://dati.gov.it/onto/dcatapit#Dataset>;"
+                " skos:prefLabel ?value "
+            "} " 
+            f"LIMIT {limit}"
+            f" {offset_clause} "
+        ],
+        "format": ["application/sparql-results+json"],
+        "timeout": ["0"],
+        "debug": ["on"],
+        "run": [" Run Query "],
+    }
+
+    ep = urlencode(qp, doseq=True)
+    data = requests.get(f"{sparql_endpoint}?" + ep)
+    try:
+        j = data.json()
+    except Exception as e:
+        return data.content.decode()
+
+    d = defaultdict(list)
+    i = None
+    for i, item in enumerate(j["results"]["bindings"]):
+        title, uri = item["value"], item["uri"]
+        url = request.base_url + uri["value"].replace("https://w3id.org/italia/controlled-vocabulary", "")
+
+        d.append({"uri": uri["value"] , "title": title["value"]})
     offset_next = offset + i + 1 if i is not None and offset is not None else 0
     d["_links"] = {
         "limit": limit,

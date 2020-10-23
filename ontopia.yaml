@@ -21,18 +21,36 @@ paths:
               schema:
                 type: object
 
-  /vocabolari/{ontology}/{rdf_type}:
+  /vocabolari:
+    get:
+      summary: List vocabularies
+      operationId: ontopia.get_datasets
+      responses:
+        "200":
+          description: A list of dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - _links
+                properties:
+                  _links:
+                      type: object
+                additionalProperties: true
+
+  /vocabolari/{classification}/{vocabulary_name}:
     get:
       summary: il voc
       parameters:
-      - name: ontology
+      - name: classification
         in: path
         required: true
-        schema: {type: string, pattern: '[a-zA-Z]+'}
-      - name: rdf_type
+        schema: {type: string, pattern: '[a-zA-Z]+', example: 'classifications-for-documents' }
+      - name: vocabulary_name
         in: path
         required: true
-        schema: {type: string, pattern: '[a-zA-Z]+'}
+        schema: {type: string, pattern: '[a-zA-Z]+', example: 'government-documents-types' }
       - name: limit
         in: query
         required: false

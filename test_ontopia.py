@@ -15,11 +15,16 @@
 import flask
 import pytest
 import yaml
+
 # Create a fake "app" for generating test request contexts.
 from werkzeug.exceptions import BadRequest, NotFound
 
 import ontopia
 
+
+def test_dataset():
+    data = ontopia.get_datasets()
+    raise NotImplementedError
 
 
 def test_vocabulary():
@@ -49,4 +54,3 @@ def test_vocabulary_pagination():
 
     for lang in langs:
         assert not r.get(lang, [])
-
