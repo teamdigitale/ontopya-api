@@ -1,6 +1,8 @@
 google-cloud-error-reporting==0.30.1
+connexion[swagger-ui]
 connexion
 pyyaml
 requests
 pytest
-
+flask-testing
+tornado

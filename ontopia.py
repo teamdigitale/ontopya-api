@@ -93,15 +93,20 @@ def get_vocabulary(
     return dict(d)
 
 
-def get_datasets(limit=200, offset=0):
+def get_datasets(limit: int = 200, offset: int = 0):
+    """
+
+    :type limit: object
+    """
     offset_clause = f"OFFSET {offset}" if offset else ""
+    vocabulary_uri = "http://dati.gov.it/onto/dcatapit#Dataset"
     qp = {
         "query": [
-            "select distinct ?uri ?value where {"
-                "?uri rdf:type <http://dati.gov.it/onto/dcatapit#Dataset>;"
-                " skos:prefLabel ?value "
-            "} " 
-            f"LIMIT {limit}"
+            "select distinct ?uri, ?title where {"
+            f"?uri rdf:type <{vocabulary_uri}>."
+            " OPTIONAL{ ?uri skos:prefLabel ?title } "  # if there's no title, it's ok
+            "} "
+            f" LIMIT {limit} "
             f" {offset_clause} "
         ],
         "format": ["application/sparql-results+json"],
@@ -120,16 +125,18 @@ def get_datasets(limit=200, offset=0):
     d = defaultdict(list)
     i = None
     for i, item in enumerate(j["results"]["bindings"]):
-        title, uri = item["value"], item["uri"]
-        url = request.base_url + uri["value"].replace("https://w3id.org/italia/controlled-vocabulary", "")
+        uri = item["uri"]["value"]
+        title = item.get("title", {"title": uri.split("/")[-1]})
+        url = request.base_url + uri.replace(
+            "https://w3id.org/italia/controlled-vocabulary", ""
+        )
 
-        d.append({"uri": uri["value"] , "title": title["value"]})
+        d["items"].append({"uri": url, "title": title.get("value", "")})
     offset_next = offset + i + 1 if i is not None and offset is not None else 0
     d["_links"] = {
         "limit": limit,
-        "url": vocabulary_uri,
+        "references": vocabulary_uri,
         "query": qp["query"],
-        "cursor": _id["value"] if i is not None else None,
         "count": i + 1 if i is not None else 0,
         "offset_next": offset_next,
         "page_next": request.base_url + "?offset=" + str(offset_next)
