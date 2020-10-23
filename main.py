@@ -80,9 +80,9 @@ def vocabulary_get(request, ontology, vocabulary):
             },
         )
 
-    _validate_parameters(request, [], ["limit", "offset"])
+    _validate_parameters(request, [], ["limit", "cursor"])
     limit = request.args.get("limit") or 200
-    offset = request.args.get("offset") or 0
+    offset = request.args.get("cursor") or None
 
     ontology = f"{ontology}/{vocabulary}"
     headers = {

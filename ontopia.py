@@ -9,15 +9,21 @@ def get_status():
     return {"status": 200}
 
 
-# @lru_cache(maxsize=5)
-def get_vocabulary(onto="CPV/Sex", limit=200, offset=0):
+@lru_cache(maxsize=5)
+def get_vocabulary(onto="CPV/Sex", limit=200, cursor=None):
     onto_url = "https://w3id.org/italia/onto/" f"{onto}"
+    assert "cursor".isalnum(), "Cursor is not alnum"
+    cursor_filter = f'FILTER (?id > "{cursor}")' if cursor is not None else ""
+
     qp = {
         "query": [
-            "select ?value ?id where {\r\n?x rdf:type "
-            f"<{onto_url}>"
-            ";\r\n skos:notation ?id;\r\n skos:prefLabel ?value\r\n}"
-            f"LIMIT {limit} OFFSET {offset}"
+            "select ?value ?id where {"
+            "?x rdf:type " f"<{onto_url}>" "; skos:notation ?id;  "
+            "skos:prefLabel ?value "
+            f" {cursor_filter} "
+            "} "
+            "ORDER BY ?id "
+            f"LIMIT {limit}"
         ],
         "format": ["application/sparql-results+json"],
         "timeout": ["0"],
@@ -40,10 +46,8 @@ def get_vocabulary(onto="CPV/Sex", limit=200, offset=0):
     d["url"] = onto_url
     d["_links"] = {
         "limit": limit,
-        "offset": offset,
-        "cursor": _id,
+        "cursor": _id["value"],
         "count": i,
-        "offset_next": offset + i,
     }
     return dict(d)
 
