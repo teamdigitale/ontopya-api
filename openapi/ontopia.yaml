@@ -6,7 +6,7 @@ info:
     recupera i dati dei vocabolari da ontopia
 servers:
 - url: >-
-    http://localhost:5000/vocabolari/v0
+   /vocabolari/v0
   description: dev
 paths:
   /status:

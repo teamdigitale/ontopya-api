@@ -1,3 +1,5 @@
 *test.py
 .tox
+Dockerfile
+docker-compose.y*ml
 
