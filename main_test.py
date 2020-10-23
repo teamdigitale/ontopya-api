@@ -15,13 +15,42 @@
 import flask
 import pytest
 import yaml
-
 # Create a fake "app" for generating test request contexts.
 from werkzeug.exceptions import BadRequest, NotFound
 
 import main
+import ontopia
 
 TEST_CF = "RSSMRO54P05E472I"
+
+
+def test_vocabulary():
+    onto = "classifications-for-documents/government-documents-types"
+    data = ontopia.get_vocabulary(onto)
+
+    assert "en" in data, data
+    assert data["en"], data
+
+
+def test_vocabulary_pagination():
+    onto = "classifications-for-documents/government-documents-types"
+    ret = ontopia.get_vocabulary(onto)
+    langs = ("en", "it")
+    print(ret)
+    offset = 0
+    while True:
+        r = ontopia.get_vocabulary(onto, limit=5, offset=offset)
+        l = r["_links"]["count"]
+        if not l:
+            break
+        offset += l
+        all_values = ((lang, x) for lang in langs if lang in r for x in r[lang])
+        for lang, x in all_values:
+            ret[lang].remove(x)
+            print(lang, next(iter(x)))
+
+    for lang in langs:
+        assert not r.get(lang, [])
 
 
 @pytest.fixture(scope="module")
@@ -55,8 +84,8 @@ def test_ontopya_get(app):
         assert "en" in res, res
 
 
-def test_ontopya_get_empty_json(app):
-    with app.test_request_context(json="", path="CPV/Sex"):
+def test_ontopya_get_limit_overflow(app):
+    with app.test_request_context(path="CPV/Sex", query_string={"limit": 1000}):
         with pytest.raises(BadRequest) as exc:
             res, status, headers = main.ontopya_get(flask.request)
         assert "At least one of the following parameter" in exc.value.description

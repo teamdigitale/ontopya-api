@@ -79,20 +79,29 @@ def vocabulary_get(request, ontology, vocabulary):
                 "details": "Supported formats: application/json",
             },
         )
-
-    _validate_parameters(request, [], ["limit", "cursor"])
+    if request.method != "GET":
+        abort(405, dict("Method not allowed", detail="Only GET requests."))
+        limit = 200
+    _validate_parameters(request, [], ["limit", "cursor", "offset"])
     limit = request.args.get("limit") or 200
-    offset = request.args.get("cursor") or None
+    limit = min(limit, 200)
+    offset = request.args.get("offset") or None
+    cursor = request.args.get("cursor") or None
 
     ontology = f"{ontology}/{vocabulary}"
     headers = {
         "Cache-Control": "public, max-age=36000",
         "Content-Type": "application/json",
     }
-    return json.dumps(get_vocabulary(ontology, limit, offset)), 200, headers
+    return (
+        json.dumps(get_vocabulary(ontology, limit, offset=offset, cursor=cursor)),
+        200,
+        headers,
+    )
 
 
 def ontopya_get(request):
+
     try:
         ontology, vocabulary = request.path.strip("/ ").split("/")
 

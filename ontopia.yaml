@@ -11,7 +11,7 @@ servers:
 paths:
   /status:
     get:
-      summary: il voc
+      summary: Service status
       operationId: ontopia.get_status
       responses:
         "200":
@@ -21,14 +21,37 @@ paths:
               schema:
                 type: object
 
-  /vocabolari:
+  /vocabolari/{ontology}/{rdf_type}:
     get:
       summary: il voc
       parameters:
-      - name: onto
+      - name: ontology
+        in: path
+        required: true
+        schema: {type: string, pattern: '[a-zA-Z]+'}
+      - name: rdf_type
+        in: path
+        required: true
+        schema: {type: string, pattern: '[a-zA-Z]+'}
+      - name: limit
         in: query
         required: false
-        schema: {type: string}
+        schema:
+          type: integer
+          default: 200
+          minimum: 0
+          maximum: 200
+          format: int32
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+          maximum: 10000
+          format: int32
+
       operationId: ontopia.get_vocabulary
       responses:
         "200":
