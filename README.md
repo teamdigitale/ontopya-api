@@ -13,19 +13,17 @@ Eseguire
 
 L'installazione su GCP avviene col comando
 
-        gcloud functions deploy ontopya_get --runtime python37 --project \
-         ontopia-api --trigger-http
+        gcloud app deploy ontopya-api --runtime python38 --project \
+         ontopia-api 
 
 che restituisce l'URL di interrogazione
 
-        curl -kv https://us-central1-ontopya-api.cloudfunctions.net/ontopya_get
+        curl -kv https://us-central1-ontopya-api.appspot.net/vocabolari/v0/ui/
 
-
-Note: è necessario attivare anche le Build API perché le Cloud Functions vengono eseguite dentro container.
 
 ### Tecnologia
 
-L'API è basata sul quickstart di Google Cloud Functions
+L'API è basata sul quickstart di Google App Engine
 
 vedi:
 
