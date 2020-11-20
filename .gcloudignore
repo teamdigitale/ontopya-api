@@ -2,4 +2,5 @@
 .tox
 Dockerfile
 docker-compose.y*ml
-
+__pycache__
+.git
