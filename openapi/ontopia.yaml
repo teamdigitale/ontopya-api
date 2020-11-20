@@ -1,80 +1,208 @@
 openapi: 3.0.0
 info:
   version: 0.0.1
-  title: Ontopia core vocabularies
+  title: Ontopia Vocabolari Controllati
   description: |-
-    recupera i dati dei vocabolari da ontopia
+    Espone i vocabolari controllati presenti in  Ontopia in formato mobile-ready
+    permettendo di usare i contenuti dei vocabolari per creare form web ed applicazioni.
+
+    I vocabolari controllati contengono una serie di informazioni di pubblica utilità
+    come:
+    - l'elenco delle province con i relativi codici ISTAT;
+    - le tipologie dei titoli di studio o i titoli accademici (eg. "Assistente", "Professore associato", ..)
+    - le tipologie di documenti ("Modulistica", "Atto normativo", ..)
+    - i titoli delle persone ("Sig.ra", "Dott", "Prof.ssa", ..).
+
+    Queste informazioni utili a comporre dei servizi pubblici, sono spesso utilizzate con
+    sintassi differenti o in maniera impropria: tramite i vocabolari è possibile invece
+    attingere a queste informazioni direttamente dai contenuti di Ontopia.
+  x-summary: >-
+    API che espone gli elenchi (Comuni, Province, titoli di studio, ..) contenuti nei Vocabolari Controllati di Ontopia.
+  x-api-id: bbf68f14-622f-4821-9723-1c88423d893f
+  contact:
+    name: AgID
+    url: https://www.agid.gov.it/it/dati/vocabolari-controllati
+  termsOfService: https://www.agid.gov.it/it/note-legali
+x-commons:
+  common-responses: &common-responses
+    default:
+      $ref: "https://teamdigitale.github.io/openapi/master/definitions.yaml#/responses/default"
+tags:
+- name: public
+  description: Questo servizio ritorna dati pubblici
+- name: maintenance
+  description: Endpoint di maintenance
 servers:
 - url: >-
    /vocabolari/v0
   description: dev
+  x-sandbox: true
 paths:
   /status:
     get:
       summary: Service status
+      description: |-
+        Verifica lo stato del servizio e la raggiungibilità di Ontopia.
+      tags:
+      - maintenance
       operationId: ontopia.get_status
       responses:
+        <<: *common-responses
         "200":
-          description: tottok
+          description: Everything is ok.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
+                $ref: "https://teamdigitale.github.io/openapi/master/definitions.yaml#/schemas/Problem"
 
   /vocabolari:
     get:
-      summary: List vocabularies
+      summary: Elenca i vocabolari disponibili
+      description: |-
+        Recupera con una query su Ontopia i Vocabolari disponibili e li ritorna.
+
+        In questa `v0` dell'API è possibile che serva raffinare questa query
+        in modo che
       operationId: ontopia.get_datasets
+      tags:
+      - public
       responses:
+        <<: *common-responses
         "200":
-          description: A list of dataset
+          description: |-
+            La ricerca dei vocabolari è andata a buon fine.
           content:
             application/json:
               schema:
                 type: object
                 required:
                   - _links
+                  - items
                 properties:
                   _links:
+                    $ref: '#/components/schemas/Limit'
+                  items:
+                    type: array
+                    maxItems: 200
+                    minItems: 0
+                    items:
                       type: object
-                additionalProperties: true
+                      properties:
+                        title:
+                          type: string
+                          maxLength: 128
+                        uri:
+                          $ref: '#/components/schemas/Url'
+
 
   /vocabolari/{classification}/{vocabulary_name}:
     get:
-      summary: il voc
+      summary: Recupera un vocabolario.
+      description: |-
+        Mostra i contenuti di un vocabolario controllato prendendo i dati presenti
+        da Ontopia con una query SPARQL.
+        I dati sono ritornati in blocchi di al massimo 200 entry, quindi
+        per scaricare i dati completi è necessario:
+        - o recuperarli direttamente da ontopia in formato json-ld
+        - o seguire i link di paginazione presenti in `_links.offset_next`.
       parameters:
       - name: classification
         in: path
         required: true
-        schema: {type: string, pattern: '[a-zA-Z]+', example: 'classifications-for-documents' }
+        schema:
+          type: string
+          pattern: '[a-zA-Z]+'
+          example: 'classifications-for-documents'
+          maxLength: 128
       - name: vocabulary_name
         in: path
         required: true
-        schema: {type: string, pattern: '[a-zA-Z]+', example: 'government-documents-types' }
+        schema: {type: string, pattern: '[a-zA-Z]+', example: 'government-documents-types', maxLength: 128 }
       - name: limit
         in: query
         required: false
         schema:
-          type: integer
-          default: 200
-          minimum: 0
-          maximum: 200
-          format: int32
+          $ref: '#/components/schemas/Limit'
       - name: offset
         in: query
         required: false
         schema:
-          type: integer
-          default: 0
-          minimum: 0
-          maximum: 10000
-          format: int32
-
+          $ref: '#/components/schemas/Offset'
+      tags:
+      - public
       operationId: ontopia.get_vocabulary
       responses:
+        <<: *common-responses
         "200":
-           description: tottok
+           description: |-
+             Ritorna il contenuto di un vocabolario. In caso di problemi nella visualizzazione
+             del vocabolario è possibile fare un raffronto con
+             [i contenuti dell'ontologia presenti su github](https://github.com/italia/daf-ontologie-vocabolari-controllati)
            content:
              application/json:
                schema:
-                 type: object
+                 $ref: '#/components/schemas/Vocabulary'
+components:
+  schemas:
+    Url:
+      type: string
+      format: url
+      maxLength: 1024
+    Limit:
+      type: integer
+      default: 200
+      minimum: 0
+      maximum: 200
+      format: int32
+    Offset:
+      type: integer
+      default: 0
+      minimum: 0
+      maximum: 10000
+      format: int32
+    PagedResponse:
+      description: Una risposta paginata
+      properties:
+        count:
+          $ref: '#/components/schemas/Limit'
+        limit:
+          $ref: '#/components/schemas/Limit'
+        offset_next:
+          $ref: '#/components/schemas/Offset'
+        page_next:
+          $ref: '#/components/schemas/Url'
+    Links:
+      properties:
+        count:
+          $ref: '#/components/schemas/Limit'
+        limit:
+          $ref: '#/components/schemas/Limit'
+        offset_next:
+          $ref: '#/components/schemas/Offset'
+        page_next:
+          $ref: '#/components/schemas/Url'
+        query:
+          description: |-
+            La query SPARQL usata per recuperare i dati da ontopia.
+          type: array
+          maxItems: 200
+          minItems: 1
+          items:
+            type: string
+            maxLength: 512
+        url:
+          $ref: '#/components/schemas/Url'
+    Vocabulary:
+      description: |-
+        Un vocabolario composto da una serie di metadati contenuti in `_links` e dai contenuti localizzati (eg. it, en).
+      required:
+        - _links
+      properties:
+        "_links":
+          $ref: "#/components/schemas/Links"
+      additionalProperties:
+        description: |-
+          Il nome di queste proprietà è un "alpha-2 country code" come citato
+          in [BCP47](https://tools.ietf.org/html/bcp47).
+        type: string
+        pattern: '[a-z]{2}'
