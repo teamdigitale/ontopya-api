@@ -36,6 +36,7 @@ servers:
 - url: >-
    /vocabolari/v0
   description: dev
+  x-sandbox: true
 paths:
   /status:
     get:
@@ -108,11 +109,15 @@ paths:
       - name: classification
         in: path
         required: true
-        schema: {type: string, pattern: '[a-zA-Z]+', example: 'classifications-for-documents' }
+        schema:
+          type: string
+          pattern: '[a-zA-Z]+'
+          example: 'classifications-for-documents'
+          maxLength: 128
       - name: vocabulary_name
         in: path
         required: true
-        schema: {type: string, pattern: '[a-zA-Z]+', example: 'government-documents-types' }
+        schema: {type: string, pattern: '[a-zA-Z]+', example: 'government-documents-types', maxLength: 128 }
       - name: limit
         in: query
         required: false
