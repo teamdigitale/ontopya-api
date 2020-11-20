@@ -26,8 +26,12 @@ info:
 x-commons:
   common-responses: &common-responses
     default:
-      $ref: "https://teamdigitale.github.io/openapi/0.0.6/definitions.yaml#/responses/default"
-
+      $ref: "https://teamdigitale.github.io/openapi/master/definitions.yaml#/responses/default"
+tags:
+- name: public
+  description: Questo servizio ritorna dati pubblici
+- name: maintenance
+  description: Endpoint di maintenance
 servers:
 - url: >-
    /vocabolari/v0
@@ -36,20 +40,31 @@ paths:
   /status:
     get:
       summary: Service status
+      description: |-
+        Verifica lo stato del servizio e la raggiungibilità di Ontopia.
+      tags:
+      - maintenance
       operationId: ontopia.get_status
       responses:
         <<: *common-responses
         "200":
           description: Everything is ok.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "https://teamdigitale.github.io/openapi/0.0.6/definitions.yaml#/schemas/Problem"
+                $ref: "https://teamdigitale.github.io/openapi/master/definitions.yaml#/schemas/Problem"
 
   /vocabolari:
     get:
       summary: Elenca i vocabolari disponibili
+      description: |-
+        Recupera con una query su Ontopia i Vocabolari disponibili e li ritorna.
+
+        In questa `v0` dell'API è possibile che serva raffinare questa query
+        in modo che
       operationId: ontopia.get_datasets
+      tags:
+      - public
       responses:
         <<: *common-responses
         "200":
@@ -67,6 +82,8 @@ paths:
                     $ref: '#/components/schemas/Limit'
                   items:
                     type: array
+                    maxItems: 200
+                    minItems: 0
                     items:
                       type: object
                       properties:
@@ -80,6 +97,13 @@ paths:
   /vocabolari/{classification}/{vocabulary_name}:
     get:
       summary: Recupera un vocabolario.
+      description: |-
+        Mostra i contenuti di un vocabolario controllato prendendo i dati presenti
+        da Ontopia con una query SPARQL.
+        I dati sono ritornati in blocchi di al massimo 200 entry, quindi
+        per scaricare i dati completi è necessario:
+        - o recuperarli direttamente da ontopia in formato json-ld
+        - o seguire i link di paginazione presenti in `_links.offset_next`.
       parameters:
       - name: classification
         in: path
@@ -99,6 +123,8 @@ paths:
         required: false
         schema:
           $ref: '#/components/schemas/Offset'
+      tags:
+      - public
       operationId: ontopia.get_vocabulary
       responses:
         <<: *common-responses
@@ -154,6 +180,8 @@ components:
           description: |-
             La query SPARQL usata per recuperare i dati da ontopia.
           type: array
+          maxItems: 200
+          minItems: 1
           items:
             type: string
             maxLength: 512
