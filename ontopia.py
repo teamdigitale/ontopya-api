@@ -18,7 +18,7 @@ def get_status():
         res = requests.get(sparql_endpoint)
         status_code = res.status_code
     except ConnectionError as e:
-        status_code = 500
+        status_code = 503
 
     if status_code == 200:
         return {
@@ -31,6 +31,7 @@ def get_status():
         status=status_code,
         title="Cannot reach remote server",
         detail=f"Error while communicating with the remote server: {sparql_endpoint}",
+        headers={"Retry-After": 300},
     )
 
 
@@ -147,4 +148,3 @@ def get_datasets(limit: int = 200, offset: int = 0):
         else "",
     }
     return dict(d), 200, {"Cache-Control": "public, max-age=3600"}
-

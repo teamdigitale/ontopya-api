@@ -34,7 +34,20 @@ def test_dataset(app):
     with app.test_request_context(path="/vocabolari",):
 
         data, status_code, headers = ontopia.get_datasets()
-        assert len(data['items']) > 30
+        assert len(data["items"]) > 30
+
+
+def test_cache(app):
+    with app.test_request_context(path="/vocabolari",):
+
+        data, status_code, headers = ontopia.get_datasets()
+        assert "Cache-Control" in headers
+
+    onto, vocabulary = "classifications-for-people", "person-title"
+
+    with app.test_request_context(path=f"/vocabolari/{onto}/{vocabulary}",):
+        data, status_code, headers = ontopia.get_vocabulary(onto, vocabulary)
+        assert "Cache-Control" in headers
 
 
 def test_vocabulary(app):
@@ -56,7 +69,9 @@ def test_vocabulary_pagination(app):
         log.debug(ret)
         offset = 0
         while True:
-            r, status_code, headers = ontopia.get_vocabulary(onto, limit=5, offset=offset)
+            r, status_code, headers = ontopia.get_vocabulary(
+                onto, limit=5, offset=offset
+            )
             l = r["_links"]["count"]
             if not l:
                 break
@@ -68,7 +83,6 @@ def test_vocabulary_pagination(app):
 
         for lang in langs:
             assert not r.get(lang, [])
-
 
 
 def bar():

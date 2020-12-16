@@ -17,7 +17,7 @@ Oppure tramite docker
 ## Configurazione
 
 E' possibile configurare l'applicazione tramite le seguenti variabili
-d'ambiente.
+d'ambiente:
 
     ONTOPYA_SPARQL_URL  # url dell'endpoint sparql da interrogare
     
