@@ -1,9 +1,9 @@
 openapi: 3.0.0
 info:
   version: 0.0.1
-  title: Ontopia Vocabolari Controllati
+  title: Ontopia Vocabolari Controllati (Beta)
   description: |-
-    Espone i vocabolari controllati presenti in  Ontopia in formato mobile-ready
+    Questa versione beta dell'API espone i vocabolari controllati presenti in  Ontopia in formato mobile-ready
     permettendo di usare i contenuti dei vocabolari per creare form web ed applicazioni.
 
     I vocabolari controllati contengono una serie di informazioni di pubblica utilità
@@ -49,7 +49,9 @@ paths:
       responses:
         <<: *common-responses
         "200":
-          description: Everything is ok.
+          description: |-
+            Il servizio non presenta anomalie. Se riscontrassi comunque
+            qualcosa di anomalo contattaci.
           content:
             application/problem+json:
               schema:
@@ -62,7 +64,7 @@ paths:
         Recupera con una query su Ontopia i Vocabolari disponibili e li ritorna.
 
         In questa `v0` dell'API è possibile che serva raffinare questa query
-        in modo che
+        in modo da ritornare ulteriori informazioni.
       operationId: ontopia.get_datasets
       tags:
       - public
@@ -71,6 +73,9 @@ paths:
         "200":
           description: |-
             La ricerca dei vocabolari è andata a buon fine.
+          headers:
+              Cache-Control:
+                $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -91,9 +96,9 @@ paths:
                         title:
                           type: string
                           maxLength: 128
+                          pattern: '[ -~]+'
                         uri:
                           $ref: '#/components/schemas/Url'
-
 
   /vocabolari/{classification}/{vocabulary_name}:
     get:
@@ -138,11 +143,25 @@ paths:
              Ritorna il contenuto di un vocabolario. In caso di problemi nella visualizzazione
              del vocabolario è possibile fare un raffronto con
              [i contenuti dell'ontologia presenti su github](https://github.com/italia/daf-ontologie-vocabolari-controllati)
+           headers:
+             Cache-Control:
+               $ref: '#/components/headers/Cache-Control'
            content:
              application/json:
                schema:
                  $ref: '#/components/schemas/Vocabulary'
 components:
+  headers:
+    Cache-Control:
+      schema:
+        type: string
+        maxLength: 200
+        pattern: '[ -~]+'  # ASCII characters
+        example: "public, max-age: 3600"
+      description: |-
+        Queste risposte possono essere messe in cache
+        pubbliche e riusate per un intervallo temporale
+        definito.
   schemas:
     Url:
       type: string
@@ -190,6 +209,7 @@ components:
           items:
             type: string
             maxLength: 512
+            pattern: 'select .{500}'
         url:
           $ref: '#/components/schemas/Url'
     Vocabulary:
@@ -206,3 +226,4 @@ components:
           in [BCP47](https://tools.ietf.org/html/bcp47).
         type: string
         pattern: '[a-z]{2}'
+        maxLength: 2

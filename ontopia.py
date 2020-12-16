@@ -93,7 +93,7 @@ def get_vocabulary(
         if offset_next is not None
         else "",
     }
-    return dict(d)
+    return dict(d), 200, {"Cache-Control": "public, max-age=3600"}
 
 
 def get_datasets(limit: int = 200, offset: int = 0):
@@ -146,10 +146,5 @@ def get_datasets(limit: int = 200, offset: int = 0):
         if offset_next is not None
         else "",
     }
-    return dict(d)
+    return dict(d), 200, {"Cache-Control": "public, max-age=3600"}
 
-
-def bar():
-    u = """https://ontopia-virtuoso.agid.gov.it/sparql?default-graph-uri=&query=select+%3Fvalue+%3Fid+where+%7B%0D%0A%3Fx+rdf%3Atype+%3Chttps%3A%2F%2Fw3id.org%2Fitalia%2Fonto%2FCPV%2FSex%3E%3B%0D%0A+skos%3Anotation+%3Fid%3B%0D%0A+skos%3AprefLabel+%3Fvalue%0D%0A%7D+LIMIT+200&format=application%2Fsparql-results%2Bjson&timeout=0&debug=on&run=+Run+Query+"""
-    url = urlparse(u)
-    qp = parse_qs(url.query)

@@ -14,6 +14,14 @@ Oppure tramite docker
     docker-compose up test
 
 
+## Configurazione
+
+E' possibile configurare l'applicazione tramite le seguenti variabili
+d'ambiente.
+
+    ONTOPYA_SPARQL_URL  # url dell'endpoint sparql da interrogare
+    
+    
 ## Deploy su Docker
 
 Eseguire l'applicazione tramite docker-compose con
