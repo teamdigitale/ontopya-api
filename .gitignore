@@ -2,3 +2,6 @@
 __*
 .tox
 .idea
+
+# cache file
+*.sqlite

@@ -14,7 +14,10 @@
 
 import flask
 import pytest
+import logging
 
+log = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 # Create a fake "app" for generating test request contexts.
 from werkzeug.exceptions import BadRequest, NotFound
 
@@ -30,25 +33,26 @@ def test_dataset(app):
     with app.test_request_context(path="/vocabolari",):
 
         data = ontopia.get_datasets()
-        raise NotImplementedError
+        assert len(data['items']) > 30
 
 
 def test_vocabulary(app):
-    with app.test_request_context(path="/vocabolari",):
-        onto = "classifications-for-documents/government-documents-types"
-        data = ontopia.get_vocabulary(onto)
+    onto, vocabulary = "classifications-for-people", "person-title"
+
+    with app.test_request_context(path=f"{onto}/{vocabulary}",):
+        data = ontopia.get_vocabulary(onto, vocabulary)
 
     assert "en" in data, data
     assert data["en"], data
 
 
 def test_vocabulary_pagination(app):
-    onto = "classifications-for-documents/government-documents-types"
+    onto, vocabulary = "classifications-for-culture", "subject-disciplines"
     langs = ("en", "it")
 
-    with app.test_request_context(path=f"/vocabolari/{onto}",):
-        ret = ontopia.get_vocabulary(onto)
-        print(ret)
+    with app.test_request_context(path=f"/{onto}/{vocabulary}",):
+        ret = ontopia.get_vocabulary(onto, vocabulary)
+        log.debug(ret)
         offset = 0
         while True:
             r = ontopia.get_vocabulary(onto, limit=5, offset=offset)
@@ -59,7 +63,7 @@ def test_vocabulary_pagination(app):
             all_values = ((lang, x) for lang in langs if lang in r for x in r[lang])
             for lang, x in all_values:
                 ret[lang].remove(x)
-                print(lang, next(iter(x)))
+                log.info(lang, next(iter(x)))
 
         for lang in langs:
             assert not r.get(lang, [])

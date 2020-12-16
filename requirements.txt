@@ -3,6 +3,4 @@ connexion[swagger-ui]
 connexion
 pyyaml
 requests
-pytest
-flask-testing
 tornado

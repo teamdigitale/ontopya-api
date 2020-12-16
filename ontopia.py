@@ -81,7 +81,7 @@ def get_vocabulary(
         value, _id = item["value"], item["id"]
         lang = value["xml:lang"]
         d[lang].append({_id["value"]: value["value"]})
-    offset_next = offset + i + 1 if i is not None and offset is not None else 0
+    offset_next = offset + i + 1 if None not in (i, offset) else 0
     d["_links"] = {
         "limit": limit,
         "url": vocabulary_uri,
