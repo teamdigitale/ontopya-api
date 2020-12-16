@@ -1,0 +1,5 @@
+# Don't pass local stuff to docker.
+
+.tox
+.git
+*sqlite

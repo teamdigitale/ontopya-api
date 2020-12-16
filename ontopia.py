@@ -1,13 +1,17 @@
 from collections import defaultdict
 from functools import lru_cache
-from urllib.parse import parse_qs, urlencode, urlparse
+from json import JSONDecodeError
+from os import environ
+from urllib.parse import urlencode
 
 import requests
 from connexion import problem
-from flask import request
+from flask import current_app, request
 from requests.exceptions import ConnectionError
 
-sparql_endpoint = "https://ontopia-virtuoso.agid.gov.it/sparql"
+sparql_endpoint = environ.get(
+    "ONTOPYA_SPARQL_URL", "https://ontopia-virtuoso.agid.gov.it/sparql"
+)
 
 
 def get_status():
@@ -15,7 +19,7 @@ def get_status():
         res = requests.get(sparql_endpoint)
         status_code = res.status_code
     except ConnectionError as e:
-        status_code = 500
+        status_code = 503
 
     if status_code == 200:
         return {
@@ -28,6 +32,7 @@ def get_status():
         status=status_code,
         title="Cannot reach remote server",
         detail=f"Error while communicating with the remote server: {sparql_endpoint}",
+        headers={"Retry-After": 300},
     )
 
 
@@ -43,7 +48,12 @@ def get_vocabulary(
         "https://w3id.org/italia/controlled-vocabulary/"
         f"{classification}/{vocabulary_name}"
     )
-    assert "cursor".isalnum(), "Cursor is not alnum"
+    if not "cursor".isalnum():
+        return problem(
+            status=400,
+            detail="Cursor is not alphanumeric",
+            title="Bad Request"
+        )
     cursor_filter = f'FILTER (?id > "{cursor}")' if cursor is not None else ""
     offset_clause = f"OFFSET {offset}" if offset else ""
     qp = {
@@ -69,16 +79,25 @@ def get_vocabulary(
     data = requests.get(f"{sparql_endpoint}?" + ep)
     try:
         j = data.json()
-    except Exception as e:
-        return data.content.decode()
+    except JSONDecodeError as e:
+        current_app.logger.exception(
+            "Error parsing a non-json response the following response: %1000r",
+            data.content,
+        )
 
+        return problem(
+            title="Error in Sparql endpoint.",
+            status=500,
+            detail=f"The sparql endpoint returned a malformed json response.",
+            ext={"query": qp["query"]},
+        )
     d = defaultdict(list)
     i = None
     for i, item in enumerate(j["results"]["bindings"]):
         value, _id = item["value"], item["id"]
         lang = value["xml:lang"]
         d[lang].append({_id["value"]: value["value"]})
-    offset_next = offset + i + 1 if i is not None and offset is not None else 0
+    offset_next = offset + i + 1 if None not in (i, offset) else 0
     d["_links"] = {
         "limit": limit,
         "url": vocabulary_uri,
@@ -90,7 +109,7 @@ def get_vocabulary(
         if offset_next is not None
         else "",
     }
-    return dict(d)
+    return dict(d), 200, {"Cache-Control": "public, max-age=3600"}
 
 
 def get_datasets(limit: int = 200, offset: int = 0):
@@ -119,8 +138,17 @@ def get_datasets(limit: int = 200, offset: int = 0):
     data = requests.get(f"{sparql_endpoint}?" + ep)
     try:
         j = data.json()
-    except Exception as e:
-        return data.content.decode()
+    except JSONDecodeError as e:
+        current_app.logger.exception(
+            "Error parsing a non-json response the following response: %1000r",
+            data.content,
+        )
+        return problem(
+            title="Error in Sparql endpoint.",
+            status=500,
+            detail=f"The sparql endpoint returned a malformed json response.",
+            ext={"query": qp["query"]},
+        )
 
     d = defaultdict(list)
     i = None
@@ -143,10 +171,4 @@ def get_datasets(limit: int = 200, offset: int = 0):
         if offset_next is not None
         else "",
     }
-    return dict(d)
-
-
-def bar():
-    u = """https://ontopia-virtuoso.agid.gov.it/sparql?default-graph-uri=&query=select+%3Fvalue+%3Fid+where+%7B%0D%0A%3Fx+rdf%3Atype+%3Chttps%3A%2F%2Fw3id.org%2Fitalia%2Fonto%2FCPV%2FSex%3E%3B%0D%0A+skos%3Anotation+%3Fid%3B%0D%0A+skos%3AprefLabel+%3Fvalue%0D%0A%7D+LIMIT+200&format=application%2Fsparql-results%2Bjson&timeout=0&debug=on&run=+Run+Query+"""
-    url = urlparse(u)
-    qp = parse_qs(url.query)
+    return dict(d), 200, {"Cache-Control": "public, max-age=3600"}

@@ -5,11 +5,30 @@ tramite un API REST che recupera i dati dei vocabolari controllati.
 
 ## test
 
-Eseguire
+Eseguire su un sistema con python
 
-  tox
+    tox
+  
+Oppure tramite docker
 
-## deploy
+    docker-compose up test
+
+
+## Configurazione
+
+E' possibile configurare l'applicazione tramite le seguenti variabili
+d'ambiente:
+
+    ONTOPYA_SPARQL_URL  # url dell'endpoint sparql da interrogare
+    
+    
+## Deploy su Docker
+
+Eseguire l'applicazione tramite docker-compose con
+
+    docker-compose up run
+
+## deploy su GCP
 
 L'installazione su GCP avviene col comando
 

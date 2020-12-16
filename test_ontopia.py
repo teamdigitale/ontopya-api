@@ -11,46 +11,66 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
+from urllib.parse import parse_qs, urlparse
 
 import flask
 import pytest
-# Create a fake "app" for generating test request contexts.
-from werkzeug.exceptions import BadRequest, NotFound
 
 import ontopia
+
+log = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.fixture(scope="module")
 def app():
-    return flask.Flask(__name__)
+    app = flask.Flask(__name__)
+    return app
 
 
 def test_dataset(app):
     with app.test_request_context(path="/vocabolari",):
 
-        data = ontopia.get_datasets()
-        raise NotImplementedError
+        data, status_code, headers = ontopia.get_datasets()
+        assert len(data["items"]) > 30
+
+
+def test_cache(app):
+    with app.test_request_context(path="/vocabolari",):
+
+        data, status_code, headers = ontopia.get_datasets()
+        assert "Cache-Control" in headers
+
+    onto, vocabulary = "classifications-for-people", "person-title"
+
+    with app.test_request_context(path=f"/vocabolari/{onto}/{vocabulary}",):
+        data, status_code, headers = ontopia.get_vocabulary(onto, vocabulary)
+        assert "Cache-Control" in headers
 
 
 def test_vocabulary(app):
-    with app.test_request_context(path="/vocabolari",):
-        onto = "classifications-for-documents/government-documents-types"
-        data = ontopia.get_vocabulary(onto)
+    onto, vocabulary = "classifications-for-people", "person-title"
+
+    with app.test_request_context(path=f"/vocabolari/{onto}/{vocabulary}",):
+        data, status_code, headers = ontopia.get_vocabulary(onto, vocabulary)
 
     assert "en" in data, data
     assert data["en"], data
 
 
 def test_vocabulary_pagination(app):
-    onto = "classifications-for-documents/government-documents-types"
+    onto, vocabulary = "classifications-for-culture", "subject-disciplines"
     langs = ("en", "it")
 
-    with app.test_request_context(path=f"/vocabolari/{onto}",):
-        ret = ontopia.get_vocabulary(onto)
-        print(ret)
+    with app.test_request_context(path=f"/vocabolari/{onto}/{vocabulary}",):
+        ret, status_code, headers = ontopia.get_vocabulary(onto, vocabulary)
+        log.debug(ret)
         offset = 0
         while True:
-            r = ontopia.get_vocabulary(onto, limit=5, offset=offset)
+            r, status_code, headers = ontopia.get_vocabulary(
+                onto, limit=5, offset=offset
+            )
             l = r["_links"]["count"]
             if not l:
                 break
@@ -58,7 +78,21 @@ def test_vocabulary_pagination(app):
             all_values = ((lang, x) for lang in langs if lang in r for x in r[lang])
             for lang, x in all_values:
                 ret[lang].remove(x)
-                print(lang, next(iter(x)))
+                log.info(lang, next(iter(x)))
 
         for lang in langs:
             assert not r.get(lang, [])
+
+
+def test_error(app):
+    ontopia.sparql_endpoint = "https://www.google.it"
+    with app.test_request_context(path="/vocabolari",):
+
+        problem = ontopia.get_datasets()
+        assert "query" in problem.body
+
+
+def bar():
+    u = """https://ontopia-virtuoso.agid.gov.it/sparql?default-graph-uri=&query=select+%3Fvalue+%3Fid+where+%7B%0D%0A%3Fx+rdf%3Atype+%3Chttps%3A%2F%2Fw3id.org%2Fitalia%2Fonto%2FCPV%2FSex%3E%3B%0D%0A+skos%3Anotation+%3Fid%3B%0D%0A+skos%3AprefLabel+%3Fvalue%0D%0A%7D+LIMIT+200&format=application%2Fsparql-results%2Bjson&timeout=0&debug=on&run=+Run+Query+"""
+    url = urlparse(u)
+    qp = parse_qs(url.query)
