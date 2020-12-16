@@ -14,6 +14,7 @@
 
 import flask
 import pytest
+
 # Create a fake "app" for generating test request contexts.
 from werkzeug.exceptions import BadRequest, NotFound
 

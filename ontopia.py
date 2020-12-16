@@ -1,13 +1,16 @@
 from collections import defaultdict
 from functools import lru_cache
 from urllib.parse import parse_qs, urlencode, urlparse
+from os import environ
 
 import requests
 from connexion import problem
 from flask import request
 from requests.exceptions import ConnectionError
 
-sparql_endpoint = "https://ontopia-virtuoso.agid.gov.it/sparql"
+sparql_endpoint = environ.get(
+    "ONTOPYA_SPARQL_URL", "https://ontopia-virtuoso.agid.gov.it/sparql"
+)
 
 
 def get_status():
