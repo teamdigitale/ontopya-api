@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import connexion
+from os import environ
 
+import connexion
 
 app = connexion.App(
     __name__, specification_dir="openapi/", options={"swagger_ui": True}

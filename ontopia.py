@@ -1,11 +1,12 @@
 from collections import defaultdict
 from functools import lru_cache
-from urllib.parse import parse_qs, urlencode, urlparse
+from json import JSONDecodeError
 from os import environ
+from urllib.parse import urlencode
 
 import requests
 from connexion import problem
-from flask import request
+from flask import current_app, request
 from requests.exceptions import ConnectionError
 
 sparql_endpoint = environ.get(
@@ -47,7 +48,12 @@ def get_vocabulary(
         "https://w3id.org/italia/controlled-vocabulary/"
         f"{classification}/{vocabulary_name}"
     )
-    assert "cursor".isalnum(), "Cursor is not alnum"
+    if not "cursor".isalnum():
+        return problem(
+            status=400,
+            detail="Cursor is not alphanumeric",
+            title="Bad Request"
+        )
     cursor_filter = f'FILTER (?id > "{cursor}")' if cursor is not None else ""
     offset_clause = f"OFFSET {offset}" if offset else ""
     qp = {
@@ -73,9 +79,18 @@ def get_vocabulary(
     data = requests.get(f"{sparql_endpoint}?" + ep)
     try:
         j = data.json()
-    except Exception as e:
-        return data.content.decode()
+    except JSONDecodeError as e:
+        current_app.logger.exception(
+            "Error parsing a non-json response the following response: %1000r",
+            data.content,
+        )
 
+        return problem(
+            title="Error in Sparql endpoint.",
+            status=500,
+            detail=f"The sparql endpoint returned a malformed json response.",
+            ext={"query": qp["query"]},
+        )
     d = defaultdict(list)
     i = None
     for i, item in enumerate(j["results"]["bindings"]):
@@ -123,8 +138,17 @@ def get_datasets(limit: int = 200, offset: int = 0):
     data = requests.get(f"{sparql_endpoint}?" + ep)
     try:
         j = data.json()
-    except Exception as e:
-        return data.content.decode()
+    except JSONDecodeError as e:
+        current_app.logger.exception(
+            "Error parsing a non-json response the following response: %1000r",
+            data.content,
+        )
+        return problem(
+            title="Error in Sparql endpoint.",
+            status=500,
+            detail=f"The sparql endpoint returned a malformed json response.",
+            ext={"query": qp["query"]},
+        )
 
     d = defaultdict(list)
     i = None

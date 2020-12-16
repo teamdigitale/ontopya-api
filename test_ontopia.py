@@ -11,23 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from urllib.parse import urlparse, parse_qs
+import logging
+from urllib.parse import parse_qs, urlparse
 
 import flask
 import pytest
-import logging
+
+import ontopia
 
 log = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
-# Create a fake "app" for generating test request contexts.
-from werkzeug.exceptions import BadRequest, NotFound
-
-import ontopia
 
 
 @pytest.fixture(scope="module")
 def app():
-    return flask.Flask(__name__)
+    app = flask.Flask(__name__)
+    return app
 
 
 def test_dataset(app):
@@ -83,6 +82,14 @@ def test_vocabulary_pagination(app):
 
         for lang in langs:
             assert not r.get(lang, [])
+
+
+def test_error(app):
+    ontopia.sparql_endpoint = "https://www.google.it"
+    with app.test_request_context(path="/vocabolari",):
+
+        problem = ontopia.get_datasets()
+        assert "query" in problem.body
 
 
 def bar():

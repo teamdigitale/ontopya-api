@@ -2,6 +2,14 @@ version: "3.0"
 services:
   run:
     build: .
+  run-gunicorn:
+    build:
+      dockerfile: Dockerfile.gunicorn
+      context: .
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
   test:
     image: python:3.8
     volumes:
