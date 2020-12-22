@@ -3,7 +3,35 @@
 Questa PoC permette di interrogare ontopia
 tramite un API REST che recupera i dati dei vocabolari controllati.
 
-## test
+Potete utilizzarla nelle vostre infrastrutture per riutilizzare i dati erogati
+dallo sparql endpoint di Agid in formato json. Ad esempio, potete recuperare
+i dati del vocabolario delle tipologie dei documenti pubblici
+
+```
+{
+  "it": [
+    { "1": "Documento albo pretorio"},
+    { "2": "Modulistica"},
+    { "3": "Documento funzionamento interno"},
+    ...
+    ]
+}
+```
+
+o l'elenco delle province con il codice ISTAT
+
+```
+{
+it: [
+  { "001": "Torino" },
+  { "002": "Vercelli"},
+  { "003": "Novara"},
+  ...
+}
+```
+
+
+## Test
 
 Eseguire su un sistema con python
 
@@ -28,7 +56,7 @@ Eseguire l'applicazione tramite docker-compose con
 
     docker-compose up run
 
-## deploy su GCP
+## Deploy su GCP
 
 L'installazione su GCP avviene col comando
 
@@ -39,6 +67,19 @@ che restituisce l'URL di interrogazione
 
         curl -kv https://us-central1-ontopya-api.appspot.net/vocabolari/v0/ui/
 
+
+## Deploy all'interno di un'infrastruttura
+
+Per limitare il carico sullo SPARQL engine remoto, se si prevede un utilizzo massivo
+di quest'API conviene deployarla all'interno della propria infrastruttura 
+dietro una cache HTTP. Eg.
+
+```
+User-Agent --> Cache Server --> Ontopya --> Sparql Engine
+```
+
+Ontopya implementa comunque un meccanismo di caching interno
+- per ora non configurabile (patches are welcome).
 
 ### Tecnologia
 
