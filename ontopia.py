@@ -16,6 +16,7 @@ sparql_endpoint = environ.get(
 
 def get_status():
     try:
+        current_app.logger.info("Testing connection to: %r", sparql_endpoint)
         res = requests.get(sparql_endpoint)
         status_code = res.status_code
     except ConnectionError as e:
