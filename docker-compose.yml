@@ -7,9 +7,13 @@ services:
       dockerfile: Dockerfile.gunicorn
       context: .
     environment:
-      PORT: 8080
+      PORT: 8081
     ports:
-      - "8080:8080"
+      - "8081:8081"
+  cache:
+    image: varnish
+    volumes:
+    - ./varnish:/etc/varnish:z
   test:
     image: python:3.8
     volumes:
